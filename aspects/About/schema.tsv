@@ -1,0 +1,7 @@
+Field Name	Is Primary Key	Syntax
+Name	Yes	Text
+Homepage	No	Text
+LinkedIn	No	Text
+Academic	No	Text
+ResearchGate	No	Text
+About	No	Text

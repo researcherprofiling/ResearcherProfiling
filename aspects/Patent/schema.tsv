@@ -1,0 +1,8 @@
+Field Name	Is Primary Key	Syntax
+Title	Yes	Text
+Inventor(s)	No	Text
+Filed	No	Text
+Issued	No	Text
+Application/Patent Number	No	Text
+Assignee(s)	No	Text
+Abstract	No	Text

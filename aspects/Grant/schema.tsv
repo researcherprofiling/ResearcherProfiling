@@ -1,0 +1,7 @@
+Field Name	Is Primary Key	Syntax
+Title	Yes	Text
+Investigator	No	Text
+Affiliation	No	Text
+Agency	Yes	Text
+Year	Yes	Integer
+Amount	No	LongInteger
