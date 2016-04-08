@@ -150,10 +150,11 @@ public class SearchHandler{
 
     public JSONObject redoSearch(JSONObject searchConditions) {
         JSONObject kws = searchConditions.getJSONObject("feedback");
-        Iterator<String> kwIter = kws.keys();
-        while (kwIter.hasNext()) {
-            String kw = kwIter.next();
-            db.insertAllRecords(kw, searchConditions, kws.getJSONObject(kw));
+        Iterator<String> aspIter = kws.keys();
+        while (aspIter.hasNext()) {
+            String asp = aspIter.next();
+            db.insertAllRecords(asp, searchConditions, kws.getJSONObject(asp));
+            db.cacheLinkageResult(asp, searchConditions, kws.getJSONObject(asp));
         }
         JSONObject results = new JSONObject();
         for (GeneralAspectWrapper registeredAspect : this.registeredAspects) {

@@ -10,6 +10,7 @@ import weka.core.Attribute;
 import weka.core.FastVector;
 import weka.core.Instance;
 import weka.core.Instances;
+import weka.core.tokenizers.NGramTokenizer;
 import weka.filters.Filter;
 import weka.filters.unsupervised.attribute.StringToWordVector;
 
@@ -23,36 +24,40 @@ public class KMeans {
 
         int numRecords = examples.size();
         Field[] fields = schema.getAllFields();
-        if (fields.length == 0) return new JSONObject();
+        if (fields.length == 0 || numRecords == 0) return new JSONObject();
         FastVector attrs = new FastVector(fields.length);
-        String indices = "";
         for (int i = 0; i < fields.length; i++) {
             Field field = fields[i];
             if (field.dataType.equalsIgnoreCase("Text") ||
                     field.dataType.equalsIgnoreCase("Location") ||
                     field.dataType.equalsIgnoreCase("Name")) {
-                indices += Integer.toString(i+1) + ",";
                 attrs.addElement(new Attribute("FIELD: " + field.fieldName, (FastVector) null));
             } else {
                 attrs.addElement(new Attribute("FIELD: " + field.fieldName));
             }
         }
-        Instances dataSet = new Instances("trainingSet", attrs, examples.size());
+        Instances dataSet = new Instances("dataSet", attrs, examples.size());
         for (int i = 0; i < examples.size(); i++) {
             Instance toAdd = buildInstance(examples.getJSONObject(i), dataSet, schema);
             toAdd.setDataset(dataSet);
             dataSet.add(toAdd);
         }
 
-        //  Convert to word vector
-        StringToWordVector filter = new StringToWordVector();
-        filter.setOutputWordCounts(true);
-        filter.setLowerCaseTokens(true);
-        filter.setTFTransform(true);
-        filter.setUseStoplist(true);
-        filter.setStopwords(new File("utils/stopwords.txt"));
         try {
+            NGramTokenizer tokenizer = new NGramTokenizer();
+            tokenizer.setNGramMinSize(1);
+            tokenizer.setNGramMaxSize(1);
+            tokenizer.setDelimiters("\\W");
+            StringToWordVector filter = new StringToWordVector();
             filter.setInputFormat(dataSet);
+            filter.setTokenizer(tokenizer);
+            filter.setWordsToKeep(1024);
+            filter.setDoNotOperateOnPerClassBasis(true);
+            filter.setOutputWordCounts(true);
+            filter.setLowerCaseTokens(true);
+            filter.setTFTransform(true);
+            filter.setUseStoplist(true);
+            filter.setStopwords(new File("utils/stopwords.txt"));
             Instances transformedDataSet = Filter.useFilter(dataSet, filter);
             SimpleKMeans kMeans = new SimpleKMeans();
             kMeans.setNumClusters((int)Math.sqrt(((double)numRecords)/2)+1);
@@ -124,7 +129,7 @@ public class KMeans {
                 }
                 ret.put(transformedDataSet.attribute(kw1_index).name() + Constants.kwDelimiter + transformedDataSet.attribute(kw2_index).name() + Constants.kwDelimiter + transformedDataSet.attribute(kw3_index).name()
                         + Constants.uniquekwDelimiter + transformedDataSet.attribute(sp1_index).name() + Constants.kwDelimiter + transformedDataSet.attribute(sp2_index).name() + Constants.kwDelimiter + transformedDataSet.attribute(sp3_index).name(),
-                        groups.get(i));
+                        schema.sort(groups.get(i)));
             }
             return ret;
         } catch (Exception e) {

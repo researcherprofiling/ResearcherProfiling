@@ -9,10 +9,7 @@ import net.sf.json.JSONObject;
 
 import java.io.BufferedReader;
 import java.io.FileReader;
-import java.util.ArrayList;
-import java.util.HashSet;
-import java.util.Iterator;
-import java.util.Set;
+import java.util.*;
 
 public class Schema {
 
@@ -212,12 +209,8 @@ public class Schema {
             }
         }
         Set<String> unique = new HashSet<>();
-        for (String s : curResolvedRec.getString("Provided by").split(", ")) {
-            unique.add(s);
-        }
-        for (String s : rec.getString("Provided by").split(", ")) {
-            unique.add(s);
-        }
+        Collections.addAll(unique, curResolvedRec.getString("Provided by").split(", "));
+        Collections.addAll(unique, rec.getString("Provided by").split(", "));
         String newInclusion = "";
         for (String s : unique) {
             newInclusion += s + ", ";
@@ -227,6 +220,44 @@ public class Schema {
         JSONArray oldORs = curResolvedRec.getJSONArray("Original record(s)");
         oldORs.addAll(rec.getJSONArray("Original record(s)"));
         curResolvedRec.replace("Original record(s)", oldORs);
+    }
+
+    public JSONArray sort(JSONArray recs) {
+        ArrayList<JSONObject> arr = new ArrayList<>();
+        for (int i = 0; i < recs.size(); i++) {
+            arr.add(recs.getJSONObject(i));
+        }
+        arr.sort((o1, o2) -> {
+            for (int i = 0; i < fields.size(); i++) {
+                int diff = 0;
+                Field f = fields.get(i);
+                try {
+                    switch (f.dataType.toLowerCase()) {
+                        case "text":
+                        case "name":
+                            diff = o1.getJSONObject(f.fieldName).values().iterator().next().toString().trim().toLowerCase().compareTo(
+                                    o2.getJSONObject(f.fieldName).values().iterator().next().toString().trim().toLowerCase()
+                            );
+                            break;
+                        case "integer":
+                            diff = o1.getJSONObject(f.fieldName).getInt(o1.getJSONObject(f.fieldName).keys().next().toString()) -
+                                    o2.getJSONObject(f.fieldName).getInt(o2.getJSONObject(f.fieldName).keys().next().toString());
+                            break;
+                        case "longinteger":
+                            diff = (int) (o1.getJSONObject(f.fieldName).getLong(o1.getJSONObject(f.fieldName).keys().next().toString()) -
+                                    o2.getJSONObject(f.fieldName).getLong(o2.getJSONObject(f.fieldName).keys().next().toString()));
+                            break;
+                    }
+                } catch (Exception e) {/* Do nothing */}
+                if (diff != 0) return diff;
+            }
+            return 0;
+        });
+        JSONArray ret = new JSONArray();
+        for (int i = 0; i < arr.size(); i++) {
+            ret.add(arr.get(i));
+        }
+        return ret;
     }
 
 }

@@ -26,10 +26,12 @@ public class ResultCard extends JPanel{
 
         private JSONObject data;
         public int relevance;   //  -1 for irrelevant, 1 for relevant, 0 for unclassified
+        public boolean[] clustered;
 
         public RecordNode(JSONObject data) {
             this.data = data;
             this.relevance = 0;
+            this.clustered = new boolean[data.getJSONArray("Original record(s)").size()];
         }
 
         @Override
@@ -173,7 +175,17 @@ public class ResultCard extends JPanel{
                 public PopUpMenu(RecordNode rn){
                     node = rn;
                     showOriginal = new JMenuItem("Show original record(s)");
-                    showOriginal.addActionListener(e -> JOptionPane.showMessageDialog(this, node.data.getJSONArray("Original record(s)").toString(1)));
+                    JSONArray origRecs = node.data.getJSONArray("Original record(s)");
+                    showOriginal.addActionListener(e -> {
+                        JOptionPane.showMessageDialog(this, origRecs.toString(1));
+                        for(int i=0; i<origRecs.size(); i++) {
+                            JSONObject rec = origRecs.getJSONObject(i);
+                            int choice = JOptionPane.showConfirmDialog(this, rec.toString(1), "Does this record belong to the feedback group?", JOptionPane.YES_NO_OPTION);
+                            if (choice == JOptionPane.YES_OPTION) {
+                                rn.clustered[i] = true;
+                            }
+                        }
+                    });
                     add(showOriginal);
                 }
             }
@@ -253,6 +265,8 @@ public class ResultCard extends JPanel{
         Object cur = model.getRoot();
         Stack<Object> toVisit = new Stack<Object>();
         toVisit.push(cur);
+        JSONArray temp = new JSONArray();
+        JSONArray notLinked = new JSONArray();
         while (!toVisit.empty()) {
             cur = toVisit.pop();
             int childrenCount = model.getChildCount(cur);
@@ -267,11 +281,36 @@ public class ResultCard extends JPanel{
                 else if (node.relevance == -1) {
                     neg.add(node.data);
                 }
+                JSONArray origRecs = node.data.getJSONArray("Original record(s)");
+                for (int i = 0; i < node.clustered.length; i++) {
+                    if (node.clustered[i]) {
+                        for (int j = 0; j < node.clustered.length; j++) {
+                            if (i != j && !node.clustered[j]) {
+                                JSONArray pair = new JSONArray();
+                                pair.add(origRecs.get(i));
+                                pair.add(origRecs.get(j));
+                                notLinked.add(pair);
+                            }
+                        }
+                        temp.add(origRecs.get(i));
+                    }
+                }
+            }
+        }
+        JSONArray linked = new JSONArray();
+        for (int i = 0; i < temp.size(); i++) {
+            for (int j = i+1; j < temp.size(); j++) {
+                JSONArray pair = new JSONArray();
+                pair.add(temp.get(i));
+                pair.add(temp.get(j));
+                linked.add(pair);
             }
         }
         JSONObject ret = new JSONObject();
         ret.put("positive", pos);
         ret.put("negative", neg);
+        ret.put("linked", linked);
+        ret.put("notlinked", notLinked);
         return ret;
     }
 

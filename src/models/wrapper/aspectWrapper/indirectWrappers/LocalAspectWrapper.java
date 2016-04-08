@@ -19,7 +19,7 @@ import java.util.Vector;
 import java.util.concurrent.Semaphore;
 
 import static models.grouping.KMeans.group;
-import static models.recordLinkage.InclusionCounter.countInclusion;
+import static models.recordLinkage.BinrayClassification.link;
 
 
 public class LocalAspectWrapper extends GeneralAspectWrapper {
@@ -80,6 +80,7 @@ public class LocalAspectWrapper extends GeneralAspectWrapper {
         //  Add aspect table in DB if it does not exist
         db.createEmptyRecordTable(name);
         db.createCacheTable(name);
+        db.createLinkageTable(name);
         filter = new RelevanceFilter(name, schema, db);
     }
 
@@ -128,7 +129,8 @@ public class LocalAspectWrapper extends GeneralAspectWrapper {
         }
         JSONArray resultFromEachSource = searchResult;
 //        This commented line is for the previous matcher.
-        JSONArray merged = countInclusion(this.schema, resultFromEachSource);
+//        JSONArray merged = countInclusion(this.schema, resultFromEachSource);
+        JSONArray merged = link(resultFromEachSource, schema, db, searchConditions, name);
 //        JSONArray merged = new JSONArray();
 //        int N = searchResult.size();
 //        if (N > 0) {
@@ -211,7 +213,7 @@ public class LocalAspectWrapper extends GeneralAspectWrapper {
             else irrelevant.add(rec);
         }
         JSONObject ret = new JSONObject();
-        ret.put("irrelevant", irrelevant);
+        ret.put("irrelevant", schema.sort(irrelevant));
         ret.put("relevant", group(relevant, schema));
         return ret;
     }
@@ -242,7 +244,7 @@ public class LocalAspectWrapper extends GeneralAspectWrapper {
                 }
             }
         }
-        JSONArray merged = countInclusion(this.schema, resultFromEachSource);
+        JSONArray merged = link(resultFromEachSource, schema, db, searchConditions, name);
         JSONArray relevant = new JSONArray();
         JSONArray irrelevant = new JSONArray();
         filter.train(searchConditions);

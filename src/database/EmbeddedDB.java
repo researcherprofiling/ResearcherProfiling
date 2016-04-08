@@ -237,5 +237,75 @@ public class EmbeddedDB {
         }
     }
 
+    public void createLinkageTable(String aspect) {
+        aspect = escapeTableName(aspect + "__LINKAGE");
+        String stmt = "CREATE TABLE \"" + aspect + "\" (" +
+                "NAME VARCHAR(255), " +
+                "AFFILIATION VARCHAR(255), " +
+                "LINKED BOOLEAN, " +
+                "DATA LONG VARCHAR)";
+        try {
+            conn.createStatement().execute(stmt);
+        } catch (SQLException e) {
+            if (e.getSQLState().equals("X0Y32")) return;
+            e.printStackTrace();
+        }
+    }
+
+    public void cacheLinkageResult(String aspect, JSONObject searchConditions, JSONObject results) {
+        aspect = escapeTableName(aspect + "__LINKAGE");
+        try {
+            PreparedStatement stmt = conn.prepareStatement("INSERT INTO \"" + aspect + "\" " +
+                    "(NAME, AFFILIATION, LINKED, DATA) VALUES (? , ? , ? , ?)");
+            for (Object record : results.getJSONArray("linked")) {
+                stmt.setString(1, searchConditions.getString("fullName"));
+                if (searchConditions.containsKey("affiliation")) stmt.setString(2, searchConditions.getString("affiliation"));
+                else stmt.setString(2, "");
+                stmt.setBoolean(3, true);
+                stmt.setString(4, record.toString());
+                stmt.executeUpdate();
+            }
+            for (Object record : results.getJSONArray("notlinked")) {
+                stmt.setString(1, searchConditions.getString("fullName"));
+                if (searchConditions.containsKey("affiliation")) stmt.setString(2, searchConditions.getString("affiliation"));
+                else stmt.setString(2, "");
+                stmt.setBoolean(3, false);
+                stmt.setString(4, record.toString());
+                stmt.executeUpdate();
+            }
+            stmt.close();
+        } catch (SQLException e) {
+            e.printStackTrace();
+        }
+    }
+
+    public JSONArray getCachedLinkageResult(String aspect, JSONObject searchConditions) {
+        aspect = escapeTableName(aspect + "__LINKAGE");
+        try {
+            PreparedStatement stmt = conn.prepareStatement(
+                    "SELECT DATA, LINKED FROM  \"" + aspect + "\" "  +
+                    "WHERE NAME = ? AND AFFILIATION = ? "
+            );
+            stmt.setString(1, searchConditions.getString("fullName"));
+            if (searchConditions.containsKey("affiliation")) stmt.setString(2, searchConditions.getString("affiliation"));
+            else stmt.setString(2, "");
+            ResultSet rs = stmt.executeQuery();
+
+            JSONArray linked = new JSONArray();
+            JSONArray notLinked = new JSONArray();
+            while (rs.next()) {
+                if (rs.getBoolean("LINKED")) linked.add(rs.getString("DATA"));
+                else notLinked.add(rs.getString("DATA"));
+            }
+            JSONArray ret = new JSONArray();
+            ret.add(linked);
+            ret.add(notLinked);
+            return ret;
+        } catch (SQLException e) {
+            e.printStackTrace();
+            return null;    //  This is intentional, to cause an error.
+        }
+    }
+
 
 }
