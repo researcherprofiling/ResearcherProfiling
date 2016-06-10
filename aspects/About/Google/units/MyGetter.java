@@ -77,8 +77,6 @@ public class MyGetter implements Getter {
 
             JSON answer = jsonCreator(researcherLinks, potentialHomepageLink, researcherName, affiliation);
 
-            System.out.println(answer);
-
             return answer;
 
         } catch (Exception e) {
@@ -527,8 +525,6 @@ public class MyGetter implements Getter {
             for (linkUnit link : newResearcherLinks) {
 
                 ArrayList<String> words = new ArrayList<String>(Arrays.asList(link.getWords()));
-
-                System.out.println(words.toString());
 
                 // Check if the URL words have anything common with the academic keywords
                 if (!Collections.disjoint(words, Arrays.asList(Constants.researchgateKW))) {

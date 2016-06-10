@@ -23,6 +23,9 @@ public class MyGetter implements Getter {
         JSONArray resultsArr = new JSONArray();
 
         JSONObject authorObj = JSONObject.fromObject(getAuthorJSON(searchConditions.getString("fullName")));
+
+        System.out.println(authorObj.toString(1));
+
         JSONArray authorArr = authorObj.getJSONObject("d").getJSONArray("results");
 
         for(Object authorObject : authorArr){

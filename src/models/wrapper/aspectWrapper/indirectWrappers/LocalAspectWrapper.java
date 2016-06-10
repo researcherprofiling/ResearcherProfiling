@@ -254,7 +254,7 @@ public class LocalAspectWrapper extends GeneralAspectWrapper {
             else irrelevant.add(rec);
         }
         JSONObject ret = new JSONObject();
-        ret.put("irrelevant", irrelevant);
+        ret.put("irrelevant", schema.sort(irrelevant));
         ret.put("relevant", group(relevant, schema));
         return ret;
     }

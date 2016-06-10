@@ -25,20 +25,6 @@ public class MyGetter implements Getter {
             query = "(AUTHOR-NAME("+searchConditions.getString("last")+
                     ","+searchConditions.getString("first")+"))";
         }
-        if (searchConditions.containsKey("kws")) {
-            JSONArray positive = searchConditions.getJSONObject("kws").getJSONArray("positive");
-            JSONArray negative = searchConditions.getJSONObject("kws").getJSONArray("negative");
-            if (!positive.isEmpty()) {
-                for (int i = 0; i < positive.size(); i++) {
-                    query += " AND ALL(\"" + positive.getString(i) + "\")";
-                }
-            }
-            if (!negative.isEmpty()) {
-                for (int i = 0; i < negative.size(); i++) {
-                    query += " AND NOT ALL(\"" + negative.getString(i) + "\")";
-                }
-            }
-        }
         params.put("query", query);
         params.put("apiKey", getApiKey());
         return MyHTTP.get("http://api.elsevier.com/content/search/scopus", params);

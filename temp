@@ -1,0 +1,10 @@
+CREATE TABLE grant(
+name_searched VARCHAR(255),
+affiliation_searched VARCHAR(255),
+title TEXT,
+investigator TEXT,
+affiliation TEXT,
+agency TEXT,
+year INT,
+amount BIGINT
+);
